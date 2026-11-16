@@ -1,0 +1,87 @@
+{
+  "target": "CIFAR-10 test split, K=10",
+  "protocol": {
+    "model": "OpenAI CLIP ViT-B/32",
+    "train_images_for_text_space": 50000,
+    "test_images_for_evaluation": 10000,
+    "semantic_centers": 167,
+    "nouns_per_center": 5,
+    "prompts": [
+      "a photo of a {}."
+    ],
+    "prompt_set": "paper-single",
+    "retrieval_temperature": 0.005,
+    "selected_nouns": 757,
+    "noun_source": "full-wordnet",
+    "protocol_variant": "authors' full WordNet selection protocol",
+    "kmeans_backend": "sklearn CPU proxy for authors' FAISS spherical K-means",
+    "kmeans_n_init": 20,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "environment": {
+    "device": "cpu",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "python": "3.12.14",
+    "torch": "2.14.0+cpu",
+    "sklearn": "1.9.0",
+    "elapsed_seconds": 5114.162998
+  },
+  "summary": {
+    "clip_image_kmeans": {
+      "ACC": {
+        "mean": 75.14999999999999,
+        "std": 0.0,
+        "paper": 74.2,
+        "delta_vs_paper": 0.9499999999999886
+      },
+      "NMI": {
+        "mean": 71.29558862774729,
+        "std": 7.105427357601002e-15,
+        "paper": 70.3,
+        "delta_vs_paper": 0.9955886277472956
+      },
+      "ARI": {
+        "mean": 62.57478385738837,
+        "std": 0.0,
+        "paper": 61.6,
+        "delta_vs_paper": 0.9747838573883669
+      }
+    },
+    "image_text_kmeans": {
+      "ACC": {
+        "mean": 89.176,
+        "std": 0.008944271910003734,
+        "paper": 90.1,
+        "delta_vs_paper": -0.9239999999999924
+      },
+      "NMI": {
+        "mean": 79.67316876812455,
+        "std": 0.020604469425067117,
+        "paper": 80.8,
+        "delta_vs_paper": -1.1268312318754425
+      },
+      "ARI": {
+        "mean": 78.04842308370556,
+        "std": 0.01845204886843875,
+        "paper": 79.8,
+        "delta_vs_paper": -1.7515769162944395
+      }
+    },
+    "improvement": {
+      "ACC": 14.02600000000001,
+      "NMI": 8.377580140377262,
+      "ARI": 15.47363922631719
+    },
+    "paper_improvement": {
+      "ACC": 15.899999999999991,
+      "NMI": 10.5,
+      "ARI": 18.199999999999996
+    }
+  }
+}

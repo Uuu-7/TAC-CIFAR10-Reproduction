@@ -1,0 +1,27 @@
+# Downloaded datasets, model weights, and generated embeddings are large.
+reproduction/data/
+# Local copies of the upstream authors' modules (their repository has no license file).
+reproduction/concat_kmeans.py
+reproduction/data_utils.py
+reproduction/eval_utils.py
+reproduction/filter_nouns.py
+reproduction/image_embedding.py
+reproduction/loss_utils.py
+reproduction/models.py
+reproduction/retrieve_text.py
+reproduction/text_embedding.py
+reproduction/train_head.py
+.deps/
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Source papers are kept locally; link to the published version instead.
+*.pdf
+paper_extracted.txt
+
+# Local/editor files
+.idea/
+.vscode/
+*.log
