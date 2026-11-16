@@ -1,25 +1,25 @@
-# TAC 论文复现：CIFAR-10 无训练版本
+# TAC Reproduction: Training-Free CIFAR-10
 
-复现 [Li 等，*Image Clustering with External Guidance*，ICML 2024](https://proceedings.mlr.press/v235/li24ar.html) 的 CIFAR-10 **TAC (no train)** 实验。论文还包含双分支蒸馏训练的完整 TAC；本仓库当前结果不代表该完整模型。
+This repository reproduces the CIFAR-10 **TAC (no train)** experiment from [Li et al., *Image Clustering with External Guidance*, ICML 2024](https://proceedings.mlr.press/v235/li24ar.html). The paper also presents a full TAC model with cross-modal mutual distillation. The results here do not cover that trained model.
 
-## 已复现结果
+## Reproduction results
 
-论文表 2 的列顺序为 NMI / ACC / ARI。下表统一按 ACC / NMI / ARI 显示，单位为百分比。复现值为 5 个 K-means 种子的均值；完整逐次结果见 [`runs.csv`](reproduction/results/runs.csv)，配置与环境见 [`summary.json`](reproduction/results/summary.json)。
+Table 2 of the paper lists NMI / ACC / ARI. The table below uses ACC / NMI / ARI throughout. Scores are percentages; reproduced scores are means over five K-means seeds. See [`runs.csv`](reproduction/results/runs.csv) for individual runs and [`summary.json`](reproduction/results/summary.json) for the configuration and environment.
 
-| 方法 | ACC | NMI | ARI |
+| Method | ACC | NMI | ARI |
 |---|---:|---:|---:|
-| CLIP K-means，论文 | 74.20 | 70.30 | 61.60 |
-| CLIP K-means，复现 | 75.15 | 71.30 | 62.57 |
-| TAC no train，论文 | 90.10 | 80.80 | 79.80 |
-| TAC no train，复现 | 89.18 | 79.67 | 78.05 |
+| CLIP K-means, paper | 74.20 | 70.30 | 61.60 |
+| CLIP K-means, reproduced | 75.15 | 71.30 | 62.57 |
+| TAC (no train), paper | 90.10 | 80.80 | 79.80 |
+| TAC (no train), reproduced | 89.18 | 79.67 | 78.05 |
 
-复现使用 OpenAI CLIP ViT-B/32、CIFAR-10 的 50,000 张训练图像构建文本空间，并在 10,000 张测试图像上评估。167 个语义中心，每中心至多 5 个 WordNet 名词，检索温度 0.005。名词提示词采用论文描述的 `a photo of a {}.`。聚类采用 scikit-learn CPU 欧氏 K-means 近似作者代码的 FAISS GPU 球面 K-means，因此数字不应被视为精确复现。该近似是目前主要的协议差异。
+The reproduction uses OpenAI CLIP ViT-B/32 and 50,000 CIFAR-10 training images to construct the text space. It evaluates on 10,000 test images. It uses 167 semantic centers, up to five WordNet nouns per center, a retrieval temperature of 0.005, and the paper's `a photo of a {}.` prompt. Clustering uses scikit-learn CPU Euclidean K-means as an approximation to the authors' FAISS GPU spherical K-means. This is the main protocol difference, so these scores should not be considered an exact reproduction.
 
-![论文与复现对比](reproduction/results/paper_vs_reproduction.png)
+![Paper results compared with the reproduction](reproduction/results/paper_vs_reproduction.png)
 
-## 运行
+## Run the experiment
 
-在 `reproduction/` 目录下：
+From the `reproduction/` directory, on Windows PowerShell:
 
 ```powershell
 python -m venv .venv
@@ -29,27 +29,27 @@ python reproduce_cifar10.py --data-dir data --output-dir results --prompt-set pa
 python plot_paper_vs_reproduction.py
 ```
 
-运行前将作者项目的 `WordNetNouns.csv` 放入 `reproduction/data/`。CIFAR-10 和 CLIP 权重在首次运行时下载，文件与中间特征保存在 `data/`，并被 Git 忽略。CPU 上首次运行可能耗时较长；中断后可复用已完成的嵌入缓存。更改 WordNet 文件、CLIP 权重或图像预处理时，应清空相关缓存后重跑。
+Before running, place `WordNetNouns.csv` from the [authors' repository](https://github.com/XLearning-SCU/2024-ICML-TAC) in `reproduction/data/`. CIFAR-10 and the CLIP weights are downloaded on the first run. Downloads and intermediate embeddings remain under `data/` and are ignored by Git. The first CPU run can take a long time; completed embedding caches are reused after an interruption. If you change the WordNet file, CLIP weights, or image preprocessing, clear the affected caches before rerunning.
 
-`--prompt-set authors-seven` 使用作者公开代码中的七个提示词。此选项会重新计算文本嵌入与名词筛选，不会混用单提示词的筛选缓存。`--noun-source paper-top30` 仅用于快速流程检查，不等同于完整 WordNet 实验。
+`--prompt-set authors-seven` uses the seven prompts in the authors' released code. It recomputes text embeddings and noun selection without reusing the single-prompt selection cache. `--noun-source paper-top30` is a quick pipeline check using the paper's published nouns, not the full WordNet experiment.
 
-## 改进实验：文本权重
+## Exploratory improvement: text fusion weight
 
-论文把单位化图像和检索文本向量等权拼接。`fusion_ablation.py` 在缓存的测试嵌入上扫描文本权重 `0.5, 0.75, 1.0, 1.25, 1.5`，其中 `1.0` 对应当前基线。运行：
+The paper concatenates unit-normalized image and retrieved-text features with equal weights. `fusion_ablation.py` evaluates text weights `0.5, 0.75, 1.0, 1.25, 1.5` on cached test embeddings; `1.0` is the equal-weight baseline. Run:
 
 ```powershell
 python fusion_ablation.py
 ```
 
-输出 `results/fusion_ablation.csv`。这是**探索性消融**：测试标签只用于计算指标，不能根据这些测试结果挑选权重后声称泛化提升。若某个权重较好，下一步应在独立数据集或预先固定的验证协议中确认。
+Results are saved to `results/fusion_ablation.csv`. This is an **exploratory ablation**. Test labels are used only to calculate metrics; selecting a weight based on this test set does not establish a generalization gain. A promising weight should be confirmed on an independent dataset or with a validation protocol fixed in advance.
 
-| 文本权重 | ACC | NMI | ARI |
+| Text weight | ACC | NMI | ARI |
 |---:|---:|---:|---:|
 | 0.75 | 89.29 | 80.10 | 78.17 |
-| 1.00（论文等权基线） | 89.18 | 79.67 | 78.05 |
+| 1.00 (equal-weight baseline) | 89.18 | 79.67 | 78.05 |
 
-在这份 CIFAR-10 测试集上的探索结果中，0.75 的三项均值分别高出约 0.11、0.43、0.12 个百分点；这是待独立验证的观察结果。
+On this CIFAR-10 test set, weight 0.75 increased the three means by about 0.11, 0.43, and 0.12 percentage points, respectively. This observation still needs independent validation.
 
-## 代码来源与局限
+## Code provenance and limitations
 
-复现参照了[作者公开实现](https://github.com/XLearning-SCU/2024-ICML-TAC)；作者原始模块只保留在本地，未上传到本仓库。这里发布的 `reproduce_cifar10.py`、`plot_paper_vs_reproduction.py` 和 `fusion_ablation.py` 是独立脚本。作者原始训练脚本依赖 CUDA/FAISS GPU，本仓库未验证完整训练版 TAC，也未发布数据、模型权重或论文 PDF。
+The reproduction follows the [authors' public implementation](https://github.com/XLearning-SCU/2024-ICML-TAC). Local copies of the authors' original modules were not uploaded to this repository. The published `reproduce_cifar10.py`, `plot_paper_vs_reproduction.py`, and `fusion_ablation.py` are standalone scripts. The original training code requires CUDA and FAISS GPU. This repository has not verified the full trained TAC model and does not distribute datasets, model weights, or paper PDFs.
