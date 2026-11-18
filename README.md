@@ -1,6 +1,6 @@
 # TAC Reproduction: Training-Free CIFAR-10
 
-This repository reproduces the CIFAR-10 **TAC (no train)** experiment from [Li et al., *Image Clustering with External Guidance*, ICML 2024](https://proceedings.mlr.press/v235/li24ar.html). The paper also presents a full TAC model with cross-modal mutual distillation. The results here do not cover that trained model.
+This repository reproduces the CIFAR-10 **TAC (no train)** experiment from [Li et al., *Image Clustering with External Guidance*, ICML 2024](https://proceedings.mlr.press/v235/li24aa.html). The paper also presents a full TAC model with cross-modal mutual distillation. The results here do not cover that trained model.
 
 ## Reproduction results
 
