@@ -1,6 +1,6 @@
 # TAC Reproduction: Training-Free CIFAR-10
 
-This repository reproduces the CIFAR-10 **TAC (no train)** experiment from [Li et al., *Image Clustering with External Guidance*, ICML 2024](https://proceedings.mlr.press/v235/li24aa.html). The paper also presents a full TAC model with cross-modal mutual distillation. The results here do not cover that trained model.
+This repository reproduces the CIFAR-10 **TAC (no train)** experiment from [Li et al., *Image Clustering with External Guidance*, ICML 2024](https://proceedings.mlr.press/v235/li24aa.html). It also includes scripts for stability analysis, prompt and component ablations, transfer experiments, and full TAC distillation. The long transfer and training runs still need to be executed; see [Additional experiments](EXPERIMENTS.md) for exact PowerShell commands and current results.
 
 ## Reproduction results
 
@@ -51,7 +51,7 @@ Both FAISS CPU runs are complete. The full WordNet noun selection yielded 776 no
 | Single prompt, [`runs`](reproduction/results/faiss_single/runs.csv) / [`summary`](reproduction/results/faiss_single/summary.json) | 84.16 ± 6.79 | 78.35 ± 2.03 | 74.28 ± 4.87 |
 | Seven prompts, [`runs`](reproduction/results/faiss_seven/runs.csv) / [`summary`](reproduction/results/faiss_seven/summary.json) | 83.67 ± 6.42 | 78.86 ± 2.10 | 74.52 ± 4.99 |
 
-The seven-prompt ensemble slightly raised mean NMI and ARI but did not raise mean ACC. The large seed-to-seed variation prevents a reliable improvement claim. These are FAISS CPU results; the authors used FAISS GPU. Both runs use the same clustering backend and seeds, and each prompt set selects its own nouns from the full WordNet vocabulary.
+The seven-prompt ensemble slightly raised mean NMI and ARI but did not raise mean ACC. The large seed-to-seed variation prevents a reliable improvement claim. These are FAISS CPU results; the authors used FAISS GPU. Both runs use the same clustering backend and seeds, and each prompt set selects its own nouns from the full WordNet vocabulary. A [20-seed stability diagnostic](EXPERIMENTS.md#1-faiss-stability-and-sampling-diagnostic) shows that FAISS's local default sample cap is a material source of variation.
 
 ## Exploratory improvement: text fusion weight
 
@@ -72,4 +72,4 @@ On this CIFAR-10 test set, weight 0.75 increased the three means by about 0.11, 
 
 ## Code provenance and limitations
 
-The reproduction follows the [authors' public implementation](https://github.com/XLearning-SCU/2024-ICML-TAC). Local copies of the authors' original modules were not uploaded to this repository. The published `reproduce_cifar10.py`, `plot_paper_vs_reproduction.py`, and `fusion_ablation.py` are standalone scripts. The original training code requires CUDA and FAISS GPU. This repository has not verified the full trained TAC model and does not distribute datasets, model weights, or paper PDFs.
+The reproduction follows the [authors' public implementation](https://github.com/XLearning-SCU/2024-ICML-TAC). Local copies of the authors' original modules were not uploaded to this repository. The published scripts are standalone. The original training code requires CUDA and FAISS GPU; this repository's training adaptation uses FAISS CPU neighbors and supports PyTorch CPU. Its full trained TAC result remains unverified until the long run completes. Datasets, model weights, and paper PDFs are not distributed here.

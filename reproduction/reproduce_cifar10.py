@@ -211,16 +211,19 @@ def noun_embeddings(
 
 
 def cluster_kmeans(
-    x: np.ndarray, n_clusters: int, seed: int, n_init: int, backend: str
+    x: np.ndarray, n_clusters: int, seed: int, n_init: int, backend: str,
+    faiss_max_points_per_centroid: int | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Cluster features using either the historical proxy or spherical FAISS CPU."""
     x = np.ascontiguousarray(x, dtype=np.float32)
     if backend == "faiss-cpu":
         import faiss
 
+        extra = ({"max_points_per_centroid": faiss_max_points_per_centroid}
+                 if faiss_max_points_per_centroid is not None else {})
         estimator = faiss.Kmeans(
             x.shape[1], n_clusters, spherical=True, niter=300,
-            nredo=n_init, seed=seed, gpu=False, verbose=False,
+            nredo=n_init, seed=seed, gpu=False, verbose=False, **extra,
         )
         estimator.train(x)
         _, labels = estimator.index.search(x, 1)
@@ -468,6 +471,10 @@ def main() -> None:
             "noun_source": args.noun_source,
             "protocol_variant": protocol_variant,
             "kmeans_backend": args.kmeans_backend,
+            "faiss_max_points_per_centroid": (
+                faiss.ClusteringParameters().max_points_per_centroid
+                if args.kmeans_backend == "faiss-cpu" else None
+            ),
             "kmeans_n_init": args.n_init,
             "seeds": args.seeds,
         },
@@ -477,6 +484,7 @@ def main() -> None:
             "python": platform.python_version(),
             "torch": torch.__version__,
             "sklearn": sklearn.__version__,
+            "faiss": faiss.__version__ if args.kmeans_backend == "faiss-cpu" else None,
             "elapsed_seconds": time.perf_counter() - started,
         },
         "summary": summary,

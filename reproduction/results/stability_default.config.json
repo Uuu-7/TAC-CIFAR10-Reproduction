@@ -1,0 +1,53 @@
+{
+  "experiment": "stability",
+  "cache": "E:\\Data Science\\DS_2\\2_Research Seminar\\reproduction\\data\\cache",
+  "output": "results\\stability_default.csv",
+  "prompts": [
+    "single",
+    "seven"
+  ],
+  "retrieval_prompts": [
+    "single",
+    "seven"
+  ],
+  "selection_backends": [
+    "sklearn",
+    "faiss-cpu"
+  ],
+  "eval_backend": "faiss-cpu",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "restarts": 20,
+  "center_seed": 0,
+  "center_restarts": 10,
+  "centers": 167,
+  "gamma": 5,
+  "tau": 0.005,
+  "modes": [
+    "soft"
+  ],
+  "image_only": false,
+  "all_nouns": false,
+  "threads": 8,
+  "max_points_per_centroid": null
+}
