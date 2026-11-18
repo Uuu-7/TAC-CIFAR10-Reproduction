@@ -60,6 +60,32 @@ def l2_normalize(x: np.ndarray) -> np.ndarray:
     return x / np.clip(np.linalg.norm(x, axis=1, keepdims=True), 1e-12, None)
 
 
+def encode_text_without_padding(model: torch.nn.Module, tokens: torch.Tensor) -> torch.Tensor:
+    """Discard positions after the last EOT; CLIP attention is causal.
+
+    Only the EOT representation is returned by CLIP, so later padding tokens
+    cannot influence it. The mask is restored after each call.
+    """
+    length = int(tokens.argmax(dim=-1).max().item()) + 1
+    if length == tokens.shape[1]:
+        return model.encode_text(tokens)
+    blocks = tuple(model.transformer.resblocks)
+    original_masks = [block.attn_mask for block in blocks]
+    try:
+        for block, mask in zip(blocks, original_masks):
+            block.attn_mask = mask[:length, :length]
+        shortened = tokens[:, :length]
+        x = model.token_embedding(shortened).type(model.dtype)
+        x = x + model.positional_embedding[:length].type(model.dtype)
+        x = model.transformer(x.permute(1, 0, 2)).permute(1, 0, 2)
+        x = model.ln_final(x).type(model.dtype)
+        row = torch.arange(x.shape[0], device=x.device)
+        return x[row, shortened.argmax(dim=-1)] @ model.text_projection
+    finally:
+        for block, mask in zip(blocks, original_masks):
+            block.attn_mask = mask
+
+
 def clustering_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
     contingency = np.zeros((10, 10), dtype=np.int64)
     np.add.at(contingency, (y_true.astype(int), y_pred.astype(int)), 1)
@@ -124,6 +150,7 @@ def noun_embeddings(
     batch_size: int,
     cache_key: str,
     prompts: tuple[str, ...],
+    trim_text_padding: bool = False,
 ) -> np.ndarray:
     ensemble_path = cache / f"{cache_key}_{len(prompts)}prompt_ensemble.npy"
     if ensemble_path.exists():
@@ -157,7 +184,10 @@ def noun_embeddings(
             batch = [template.format(noun) for noun in nouns[start : start + batch_size]]
             tokens = clip.tokenize(batch, truncate=True).to(device)
             with torch.inference_mode():
-                encoded = model.encode_text(tokens).float()
+                encoded = (
+                    encode_text_without_padding(model, tokens)
+                    if trim_text_padding else model.encode_text(tokens)
+                ).float()
             done = min(start + batch_size, len(nouns))
             prompt_array[start:done] = encoded.cpu().numpy()
             prompt_array.flush()
@@ -180,10 +210,23 @@ def noun_embeddings(
     return ensemble
 
 
-def spherical_proxy_kmeans(
-    x: np.ndarray, n_clusters: int, seed: int, n_init: int
+def cluster_kmeans(
+    x: np.ndarray, n_clusters: int, seed: int, n_init: int, backend: str
 ) -> tuple[np.ndarray, np.ndarray]:
-    """K-means on unit features; sklearn is the CPU replacement for FAISS GPU."""
+    """Cluster features using either the historical proxy or spherical FAISS CPU."""
+    x = np.ascontiguousarray(x, dtype=np.float32)
+    if backend == "faiss-cpu":
+        import faiss
+
+        estimator = faiss.Kmeans(
+            x.shape[1], n_clusters, spherical=True, niter=300,
+            nredo=n_init, seed=seed, gpu=False, verbose=False,
+        )
+        estimator.train(x)
+        _, labels = estimator.index.search(x, 1)
+        return labels.reshape(-1), l2_normalize(estimator.centroids)
+    if backend != "sklearn":
+        raise ValueError(f"Unknown K-means backend: {backend}")
     estimator = KMeans(
         n_clusters=n_clusters,
         init="k-means++",
@@ -193,7 +236,7 @@ def spherical_proxy_kmeans(
         algorithm="lloyd",
         verbose=0,
     )
-    labels = estimator.fit_predict(x.astype(np.float32, copy=False))
+    labels = estimator.fit_predict(x)
     centers = l2_normalize(estimator.cluster_centers_.astype(np.float32))
     return labels, centers
 
@@ -205,6 +248,7 @@ def select_discriminative_nouns(
     cache: Path,
     seed: int,
     cache_key: str,
+    backend: str,
 ) -> tuple[np.ndarray, list[str]]:
     selected_path = cache / f"cifar10_selected_noun_features_{cache_key}.npy"
     selected_words_path = cache / f"cifar10_selected_nouns_{cache_key}.txt"
@@ -215,7 +259,7 @@ def select_discriminative_nouns(
     train_unit = l2_normalize(train_images)
     noun_unit = l2_normalize(noun_features)
     print("Fitting 167 semantic centers on CIFAR-10 train embeddings...", flush=True)
-    assignments, centers = spherical_proxy_kmeans(train_unit, 167, seed, n_init=10)
+    assignments, centers = cluster_kmeans(train_unit, 167, seed, n_init=10, backend=backend)
     # Recompute means exactly as in the authors' filter_nouns.py, then normalize.
     centers = np.stack([train_unit[assignments == k].mean(0) for k in range(167)])
     centers = l2_normalize(centers)
@@ -259,6 +303,7 @@ def evaluate(
     text_features: np.ndarray,
     seeds: list[int],
     n_init: int,
+    backend: str,
 ) -> tuple[list[dict], dict]:
     representations = {
         "clip_image_kmeans": l2_normalize(image_features),
@@ -270,7 +315,7 @@ def evaluate(
     for method, representation in representations.items():
         for seed in seeds:
             started = time.perf_counter()
-            prediction, _ = spherical_proxy_kmeans(representation, 10, seed, n_init)
+            prediction, _ = cluster_kmeans(representation, 10, seed, n_init, backend)
             metric = clustering_metrics(y_true, prediction)
             rows.append(
                 {
@@ -316,6 +361,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--workers", type=int, default=0)
     parser.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4])
     parser.add_argument("--n-init", type=int, default=20)
+    parser.add_argument("--kmeans-backend", choices=("sklearn", "faiss-cpu"), default="sklearn")
+    parser.add_argument("--trim-text-padding", action="store_true",
+                        help="Skip text positions after EOT; verify numerical equivalence before use.")
     parser.add_argument("--threads", type=int, default=os.cpu_count() or 1)
     parser.add_argument(
         "--noun-source",
@@ -335,6 +383,10 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     torch.set_num_threads(args.threads)
+    if args.kmeans_backend == "faiss-cpu":
+        import faiss
+
+        faiss.omp_set_num_threads(args.threads)
     args.data_dir.mkdir(parents=True, exist_ok=True)
     cache = args.data_dir / "cache"
     cache.mkdir(parents=True, exist_ok=True)
@@ -365,11 +417,14 @@ def main() -> None:
         noun_table = pd.read_csv(args.data_dir / "WordNetNouns.csv")
         nouns = noun_table["word"].astype(str).tolist()
         noun_features = noun_embeddings(
-            model, nouns, cache, device, args.text_batch_size, "wordnet_nouns", prompts
+            model, nouns, cache, device, args.text_batch_size,
+            "wordnet_nouns_trimmed" if args.trim_text_padding else "wordnet_nouns",
+            prompts, args.trim_text_padding,
         )
         selected_features, selected_words = select_discriminative_nouns(
             train_images, nouns, noun_features, cache, args.seeds[0],
-            f"{args.prompt_set}_seed{args.seeds[0]}",
+            f"{args.prompt_set}{'_trimmed' if args.trim_text_padding else ''}{'_faiss' if args.kmeans_backend == 'faiss-cpu' else ''}_seed{args.seeds[0]}",
+            args.kmeans_backend,
         )
         protocol_variant = "authors' full WordNet selection protocol"
     else:
@@ -381,15 +436,16 @@ def main() -> None:
                 cache,
                 device,
                 args.text_batch_size,
-                "paper_table7_top30",
+                "paper_table7_top30_trimmed" if args.trim_text_padding else "paper_table7_top30",
                 prompts,
+                args.trim_text_padding,
             )
         )
         protocol_variant = "bounded run using the paper's published CIFAR-10 Table 7 Top-30 nouns"
     retrieved = retrieve_text_counterparts(test_images, selected_features)
-    np.save(cache / f"cifar10_retrieved_text_test_{args.noun_source}_{args.prompt_set}.npy", retrieved)
+    np.save(cache / f"cifar10_retrieved_text_test_{args.noun_source}_{args.prompt_set}{'_trimmed' if args.trim_text_padding else ''}{'_faiss' if args.kmeans_backend == 'faiss-cpu' else ''}.npy", retrieved)
     rows, summary = evaluate(
-        test_labels, test_images, retrieved, args.seeds, args.n_init
+        test_labels, test_images, retrieved, args.seeds, args.n_init, args.kmeans_backend
     )
 
     with (args.output_dir / "runs.csv").open("w", newline="", encoding="utf-8") as handle:
@@ -406,11 +462,12 @@ def main() -> None:
             "nouns_per_center": 5,
             "prompts": list(prompts),
             "prompt_set": args.prompt_set,
+            "trim_text_padding": args.trim_text_padding,
             "retrieval_temperature": 0.005,
             "selected_nouns": len(selected_words),
             "noun_source": args.noun_source,
             "protocol_variant": protocol_variant,
-            "kmeans_backend": "sklearn CPU proxy for authors' FAISS spherical K-means",
+            "kmeans_backend": args.kmeans_backend,
             "kmeans_n_init": args.n_init,
             "seeds": args.seeds,
         },

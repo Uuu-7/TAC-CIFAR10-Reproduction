@@ -1,0 +1,94 @@
+{
+  "target": "CIFAR-10 test split, K=10",
+  "protocol": {
+    "model": "OpenAI CLIP ViT-B/32",
+    "train_images_for_text_space": 50000,
+    "test_images_for_evaluation": 10000,
+    "semantic_centers": 167,
+    "nouns_per_center": 5,
+    "prompts": [
+      "itap of a {}.",
+      "a bad photo of the {}.",
+      "a origami {}.",
+      "a photo of the large {}.",
+      "a {} in a video game.",
+      "art of the {}.",
+      "a photo of the small {}."
+    ],
+    "prompt_set": "authors-seven",
+    "trim_text_padding": true,
+    "retrieval_temperature": 0.005,
+    "selected_nouns": 749,
+    "noun_source": "full-wordnet",
+    "protocol_variant": "authors' full WordNet selection protocol",
+    "kmeans_backend": "faiss-cpu",
+    "kmeans_n_init": 20,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "environment": {
+    "device": "cpu",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "python": "3.13.14",
+    "torch": "2.14.0+cpu",
+    "sklearn": "1.9.0",
+    "elapsed_seconds": 5828.6989724
+  },
+  "summary": {
+    "clip_image_kmeans": {
+      "ACC": {
+        "mean": 75.952,
+        "std": 3.445485452008179,
+        "paper": 74.2,
+        "delta_vs_paper": 1.7519999999999953
+      },
+      "NMI": {
+        "mean": 71.41531751144508,
+        "std": 1.800231425516979,
+        "paper": 70.3,
+        "delta_vs_paper": 1.1153175114450846
+      },
+      "ARI": {
+        "mean": 62.43862078488005,
+        "std": 1.3579626377321903,
+        "paper": 61.6,
+        "delta_vs_paper": 0.8386207848800495
+      }
+    },
+    "image_text_kmeans": {
+      "ACC": {
+        "mean": 83.672,
+        "std": 6.419308373960546,
+        "paper": 90.1,
+        "delta_vs_paper": -6.427999999999997
+      },
+      "NMI": {
+        "mean": 78.86435313641036,
+        "std": 2.0963615864527245,
+        "paper": 80.8,
+        "delta_vs_paper": -1.935646863589639
+      },
+      "ARI": {
+        "mean": 74.5172714346979,
+        "std": 4.993961503836826,
+        "paper": 79.8,
+        "delta_vs_paper": -5.282728565302094
+      }
+    },
+    "improvement": {
+      "ACC": 7.719999999999999,
+      "NMI": 7.449035624965276,
+      "ARI": 12.078650649817853
+    },
+    "paper_improvement": {
+      "ACC": 15.899999999999991,
+      "NMI": 10.5,
+      "ARI": 18.199999999999996
+    }
+  }
+}

@@ -33,6 +33,26 @@ Before running, place `WordNetNouns.csv` from the [authors' repository](https://
 
 `--prompt-set authors-seven` uses the seven prompts in the authors' released code. It recomputes text embeddings and noun selection without reusing the single-prompt selection cache. `--noun-source paper-top30` is a quick pipeline check using the paper's published nouns, not the full WordNet experiment.
 
+### FAISS spherical K-means and seven-prompt run
+
+Install the optional FAISS dependency with `pip install -r requirements-faiss.txt`. Then run the following from `reproduction/`:
+
+```powershell
+python reproduce_cifar10.py --data-dir data --output-dir results/faiss_single --prompt-set paper-single --noun-source full-wordnet --kmeans-backend faiss-cpu --threads 8
+python reproduce_cifar10.py --data-dir data --output-dir results/faiss_seven --prompt-set authors-seven --noun-source full-wordnet --kmeans-backend faiss-cpu --trim-text-padding --threads 8
+```
+
+The seven-prompt run encodes the full WordNet vocabulary and can take hours on a CPU. It writes a partial array and progress file after every text batch. Repeating the same command resumes the current prompt. `--trim-text-padding` skips positions after CLIP's end-of-text token; because the attention is causal, those positions cannot affect the returned embedding. A 256-noun check showed a maximum absolute difference of `2.4e-6` from the standard encoder. The optimized run uses separate caches from the standard encoder.
+
+Both FAISS CPU runs are complete. The full WordNet noun selection yielded 776 nouns with one prompt and 749 with seven prompts. The table reports image-plus-text mean ± sample standard deviation over seeds 0–4, with 20 FAISS restarts per seed:
+
+| Prompt set | ACC | NMI | ARI |
+|---|---:|---:|---:|
+| Single prompt, [`runs`](reproduction/results/faiss_single/runs.csv) / [`summary`](reproduction/results/faiss_single/summary.json) | 84.16 ± 6.79 | 78.35 ± 2.03 | 74.28 ± 4.87 |
+| Seven prompts, [`runs`](reproduction/results/faiss_seven/runs.csv) / [`summary`](reproduction/results/faiss_seven/summary.json) | 83.67 ± 6.42 | 78.86 ± 2.10 | 74.52 ± 4.99 |
+
+The seven-prompt ensemble slightly raised mean NMI and ARI but did not raise mean ACC. The large seed-to-seed variation prevents a reliable improvement claim. These are FAISS CPU results; the authors used FAISS GPU. Both runs use the same clustering backend and seeds, and each prompt set selects its own nouns from the full WordNet vocabulary.
+
 ## Exploratory improvement: text fusion weight
 
 The paper concatenates unit-normalized image and retrieved-text features with equal weights. `fusion_ablation.py` evaluates text weights `0.5, 0.75, 1.0, 1.25, 1.5` on cached test embeddings; `1.0` is the equal-weight baseline. Run:

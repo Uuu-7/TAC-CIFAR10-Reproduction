@@ -12,6 +12,8 @@ reproduction/retrieve_text.py
 reproduction/text_embedding.py
 reproduction/train_head.py
 .deps/
+.deps-faiss/
+.deps-clip/
 **/__pycache__/
 *.py[cod]
 .venv/
