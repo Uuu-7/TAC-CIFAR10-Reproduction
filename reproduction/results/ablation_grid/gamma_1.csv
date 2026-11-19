@@ -1,0 +1,6 @@
+ACC,ARI,NMI,centers,eval_backend,experiment,gamma,max_cluster_size,max_points_per_centroid,mean_assigned_cosine,min_cluster_size,nouns_selected,retrieval,retrieval_prompt,seed,selection_backend,selection_prompt,tau
+89.11,78.20352438814996,80.4345969625233,167,faiss-cpu,ablation,1,1185,1000,0.9188806414604187,770,158,soft,seven,0,faiss-cpu,seven,0.005
+90.47,80.43931358683646,81.56292957723598,167,faiss-cpu,ablation,1,1173,1000,0.9189906120300293,871,158,soft,seven,1,faiss-cpu,seven,0.005
+90.51,80.51695488361888,81.63809977031802,167,faiss-cpu,ablation,1,1175,1000,0.9189906120300293,869,158,soft,seven,2,faiss-cpu,seven,0.005
+90.46,80.40852511501782,81.57415203089666,167,faiss-cpu,ablation,1,1177,1000,0.9189906120300293,867,158,soft,seven,3,faiss-cpu,seven,0.005
+79.36,72.6002496458758,78.8137763765246,167,faiss-cpu,ablation,1,1910,1000,0.916307806968689,378,158,soft,seven,4,faiss-cpu,seven,0.005

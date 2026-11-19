@@ -1,0 +1,37 @@
+{
+  "experiment": "ablation",
+  "cache": "E:\\Data Science\\DS_2\\2_Research Seminar\\reproduction\\data\\cache",
+  "output": "E:\\Data Science\\DS_2\\2_Research Seminar\\reproduction\\results\\ablation_grid\\tau_010.csv",
+  "prompts": [
+    "seven"
+  ],
+  "retrieval_prompts": [
+    "single",
+    "seven"
+  ],
+  "selection_backends": [
+    "faiss-cpu"
+  ],
+  "eval_backend": "faiss-cpu",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "restarts": 20,
+  "center_seed": 0,
+  "center_restarts": 10,
+  "centers": 167,
+  "gamma": 5,
+  "tau": 0.01,
+  "modes": [
+    "soft"
+  ],
+  "image_only": false,
+  "all_nouns": false,
+  "no_selected": false,
+  "threads": 8,
+  "max_points_per_centroid": 1000
+}

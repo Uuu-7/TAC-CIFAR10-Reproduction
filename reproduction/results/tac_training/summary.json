@@ -1,0 +1,41 @@
+{
+  "protocol": {
+    "prompt_set": "seven",
+    "epochs": 20,
+    "batch_size": 512,
+    "topk": 50,
+    "temperature": 0.5,
+    "balance_weight": 5.0,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "device": "cpu"
+  },
+  "environment": {
+    "python": "3.13.14",
+    "torch": "2.14.0+cpu",
+    "faiss": "1.16.0",
+    "elapsed_seconds": 210.00913049999872
+  },
+  "summary": {
+    "ACC": {
+      "mean": 90.05199999999999,
+      "std": 3.786379537236064,
+      "paper": 91.9
+    },
+    "NMI": {
+      "mean": 82.23985376333113,
+      "std": 2.0246590631307257,
+      "paper": 83.3
+    },
+    "ARI": {
+      "mean": 81.0554600820415,
+      "std": 4.060129220443615,
+      "paper": 83.1
+    }
+  }
+}

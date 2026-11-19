@@ -1,6 +1,6 @@
 # Additional TAC experiments
 
-These commands are intended for **your own PowerShell terminal**. The longer dataset extraction, WordNet-wide retrieval, ablation grid, and training jobs have not been run by Codex. All scripts are written in English and write outputs under `reproduction/results/`. Run commands from `reproduction/`.
+These commands are intended for **your own PowerShell terminal**. The user has completed the default 12-configuration ablation grid, CIFAR-20/STL-10 transfer, and five-seed TAC training. Optional WordNet-wide retrieval and the scikit-learn selection factorial extension remain unrun. All scripts write outputs under `reproduction/results/`. Run commands from `reproduction/`.
 
 ## Environment and cache
 
@@ -52,6 +52,8 @@ python cached_experiments.py factorial --selection-backends sklearn faiss-cpu --
 
 ## 3. Component and parameter ablations
 
+All 12 default configurations are complete (five seeds each); see [summary.csv](reproduction/results/ablation_grid/summary.csv). Baseline ACC/NMI/ARI are 88.84/80.31/78.40. Gamma 20 gives 90.21/80.82/79.86, while temperature 0.01 gives 89.81/81.32/79.02. These test-set comparisons are exploratory; they do not establish a validated parameter improvement. Separate image-only and all-noun controls have not been run.
+
 The prespecified grid varies one factor from the seven-prompt baseline: semantic centers (50/100/300), nouns per center (1/3/10/20), retrieval temperature (0.002/0.01/0.02), and hard vs soft retrieval. It uses FAISS CPU, five seeds, 20 restarts, and the full test-set training cap of 1,000. Each configuration writes its own CSV, config JSON, and log. Restarting skips completed configurations.
 
 ```powershell
@@ -81,17 +83,28 @@ python transfer_dataset.py cifar20 --prompt-set seven --backend faiss-cpu --thre
 python transfer_dataset.py stl10 --prompt-set seven --backend faiss-cpu --threads 8 --output-dir results/stl10_transfer
 ```
 
-On CPU, image extraction can take hours. Each dataset downloads on first use. Results appear in each output directory as `runs.csv` and `summary.json`. These transfers have **not yet been run**, so no numerical transfer claim is made.
+Both transfers are complete. Each output directory contains `runs.csv` and `summary.json`. Scores below are mean ± sample SD over seeds 0–4:
+
+| Dataset | Text weight | ACC | NMI | ARI |
+|---|---:|---:|---:|---:|
+| CIFAR-20 | 1.0 | 54.39 ± 1.86 | 59.58 ± 0.69 | 40.74 ± 2.24 |
+| CIFAR-20 | 0.75 | 55.04 ± 3.23 | 59.07 ± 1.34 | 40.74 ± 2.61 |
+| STL-10 | 1.0 | 97.43 ± 0.02 | 94.12 ± 0.03 | 94.41 ± 0.04 |
+| STL-10 | 0.75 | 98.00 ± 0.06 | 95.08 ± 0.13 | 95.63 ± 0.14 |
+
+Weight 0.75 improves all three mean metrics on STL-10. On CIFAR-20, ACC increases slightly, NMI decreases, and ARI is nearly unchanged; this is mixed evidence for transfer.
 
 ## 5. Full TAC distillation
 
-`train_tac.py` implements the released two-head architecture, 50 image/text nearest neighbors, bidirectional cluster distillation, consistency and balance losses, 20 epochs, batch size 512, and Adam learning rate 0.001. It constructs retrieved *training* text from the cached seven-prompt noun set, mines exact FAISS CPU neighbors, and saves a checkpoint after each epoch. Restarting the same command resumes completed epochs. Test labels are used only for the final score for each seed. This is a CPU adaptation of the authors' GPU training path; it is not yet an experimentally verified 91.9% TAC reproduction.
+`train_tac.py` implements the released two-head architecture, 50 image/text nearest neighbors, bidirectional cluster distillation, consistency and balance losses, 20 epochs, batch size 512, and Adam learning rate 0.001. It constructs retrieved *training* text from the cached seven-prompt noun set, mines exact FAISS CPU neighbors, and saves a checkpoint after each epoch. Restarting the same command resumes completed epochs. Test labels are used only for the final score for each seed. This is a CPU adaptation of the authors' GPU training path.
 
 ```powershell
 python train_tac.py --prompt-set seven --device cpu --threads 8 --epochs 20 --seeds 0 1 2 3 4 --output-dir results/tac_training
 ```
 
-Nearest-neighbor mining and five full training runs can take many hours on CPU. Results appear in `results/tac_training/runs.csv` and `summary.json`; checkpoints and neighbors stay in the ignored `data/cache/`. The training result **has not yet been run**. Keep the same output directory, prompt, batch size, neighbor count, temperature, balance weight, and epoch target when resuming. If you change the noun cache or CLIP features, clear the corresponding retrieved-text, neighbor, and checkpoint caches first.
+All five seeds completed 20 epochs. Results are in [runs.csv](reproduction/results/tac_training/runs.csv) and [summary.json](reproduction/results/tac_training/summary.json). ACC/NMI/ARI are **90.05 ± 3.79 / 82.24 ± 2.02 / 81.06 ± 4.06**, compared with the paper's 91.9/83.3/83.1. Seed ACCs are 91.83, 83.28, 91.63, 91.74, and 91.78; the poor seed is retained in every aggregate. The saved invocation reports 210 seconds, which is not a reliable first-run end-to-end cost because cached preparation or resumed work may precede it.
+
+Checkpoints and neighbors stay in ignored `data/cache/`. Keep the same output directory, prompt, batch size, neighbor count, temperature, balance weight, and epoch target when resuming. If you change the noun cache or CLIP features, clear the corresponding retrieved-text, neighbor, and checkpoint caches first.
 
 ## Reading results
 

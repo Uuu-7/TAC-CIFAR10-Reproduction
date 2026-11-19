@@ -1,6 +1,6 @@
 # TAC Reproduction: CIFAR-10
 
-This repository reproduces the CIFAR-10 **TAC (no train)** experiment from [Li et al., *Image Clustering with External Guidance*, ICML 2024](https://proceedings.mlr.press/v235/li24aa.html). It also includes scripts for stability analysis, prompt and component ablations, transfer experiments, and full TAC distillation. The long component ablation, transfer, and training runs still need to be executed; see [Additional experiments](EXPERIMENTS.md) for exact PowerShell commands and current results.
+This repository reproduces CIFAR-10 **TAC (no train)** and full TAC distillation from [Li et al., *Image Clustering with External Guidance*, ICML 2024](https://proceedings.mlr.press/v235/li24aa.html). Completed experiments also include stability analysis, prompt and component ablations, and CIFAR-20/STL-10 transfer. See [Additional experiments](EXPERIMENTS.md) for protocols, commands, and results.
 
 ## Reproduction results
 
@@ -61,13 +61,13 @@ The five follow-up experiments use the same cached CIFAR-10 CLIP features and Wo
 |---|---|---|
 | 1. FAISS seed and sampling stability | Completed | [20-seed default-cap runs](reproduction/results/stability_default.csv): single-prompt ACC 85.00 ± 5.59; seven-prompt ACC 85.98 ± 5.78. [Five-seed full-data diagnostic](reproduction/results/stability_full_data.csv): 89.11 ± 0.01 and 88.84 ± 3.04, respectively. |
 | 2. Separate noun selection from prompt encoding | Completed for FAISS CPU | [Four-cell experiment](reproduction/results/factorial_faiss.csv): single-prompt noun selection with seven-prompt retrieval encoding gives ACC 87.88 ± 5.26 over five seeds. The scikit-learn selection extension is available but has not been run. |
-| 3. Component and hyperparameter ablations | Ready to run | [`run_ablation_grid.py`](reproduction/run_ablation_grid.py) varies semantic-center count, nouns per center, retrieval temperature, and hard/soft retrieval. An image-only control and optional full-WordNet retrieval control are also available. |
-| 4. CIFAR-20 and STL-10 transfer | Ready to run | [`transfer_dataset.py`](reproduction/transfer_dataset.py) tests the CIFAR-10 exploratory text weight 0.75 against 1.0 without target-dataset tuning. |
-| 5. Full TAC distillation | Ready to run | [`train_tac.py`](reproduction/train_tac.py) implements two cluster heads, cross-modal neighbor distillation, and resumable epoch checkpoints. No trained-model score is claimed yet. |
+| 3. Component and hyperparameter ablations | Completed: 12 configurations | [Summary](reproduction/results/ablation_grid/summary.csv): five seeds per configuration. Gamma 20 gives ACC 90.21; baseline 88.84. Separate image-only and full-WordNet controls remain optional and unrun. |
+| 4. CIFAR-20 and STL-10 transfer | Completed | Text weight 1.0 → 0.75 changes mean ACC from 54.39 → 55.04 on [CIFAR-20](reproduction/results/cifar20_transfer/summary.json), and 97.43 → 98.00 on [STL-10](reproduction/results/stl10_transfer/summary.json). CIFAR-20 NMI decreases. |
+| 5. Full TAC distillation | Completed: five seeds, 20 epochs each | [Summary](reproduction/results/tac_training/summary.json): ACC 90.05 ± 3.79, NMI 82.24 ± 2.02, ARI 81.06 ± 4.06. Seed 1 ACC is 83.28; all seeds are retained. |
 
 The first two analyses are exploratory. The full-data FAISS setting changes a clustering default, and the prompt factorial was compared on CIFAR-10 test labels. Neither establishes an independently validated improvement. The original authors used FAISS GPU; these scripts use FAISS CPU.
 
-Run the remaining long jobs in your own PowerShell terminal from `reproduction/`. On this machine, first set the existing local CLIP and FAISS package paths as shown in [Environment and cache](EXPERIMENTS.md#environment-and-cache); in a fresh environment, install `requirements-faiss.txt`.
+To reproduce the completed jobs, run these commands in your own PowerShell terminal from `reproduction/`. On this machine, first set the existing local CLIP and FAISS package paths as shown in [Environment and cache](EXPERIMENTS.md#environment-and-cache); in a fresh environment, install `requirements-faiss.txt`.
 
 ```powershell
 python run_ablation_grid.py --threads 8 --seeds 0 1 2 3 4 --restarts 20
@@ -97,4 +97,4 @@ On this CIFAR-10 test set, weight 0.75 increased the three means by about 0.11, 
 
 ## Code provenance and limitations
 
-The reproduction follows the [authors' public implementation](https://github.com/XLearning-SCU/2024-ICML-TAC). Local copies of the authors' original modules were not uploaded to this repository. The published scripts are standalone. The original training code requires CUDA and FAISS GPU; this repository's training adaptation uses FAISS CPU neighbors and supports PyTorch CPU. Its full trained TAC result remains unverified until the long run completes. Datasets, model weights, and paper PDFs are not distributed here.
+The reproduction follows the [authors' public implementation](https://github.com/XLearning-SCU/2024-ICML-TAC). Local copies of the authors' original modules were not uploaded to this repository. The published scripts are standalone. The original training code requires CUDA and FAISS GPU; this repository's completed training adaptation uses FAISS CPU neighbors and PyTorch CPU. Its five-seed result remains below the paper's TAC ACC of 91.9 and exhibits one poor seed. Datasets, model weights, and paper PDFs are not distributed here.
