@@ -1,6 +1,6 @@
-# TAC Reproduction: Training-Free CIFAR-10
+# TAC Reproduction: CIFAR-10
 
-This repository reproduces the CIFAR-10 **TAC (no train)** experiment from [Li et al., *Image Clustering with External Guidance*, ICML 2024](https://proceedings.mlr.press/v235/li24aa.html). It also includes scripts for stability analysis, prompt and component ablations, transfer experiments, and full TAC distillation. The long transfer and training runs still need to be executed; see [Additional experiments](EXPERIMENTS.md) for exact PowerShell commands and current results.
+This repository reproduces the CIFAR-10 **TAC (no train)** experiment from [Li et al., *Image Clustering with External Guidance*, ICML 2024](https://proceedings.mlr.press/v235/li24aa.html). It also includes scripts for stability analysis, prompt and component ablations, transfer experiments, and full TAC distillation. The long component ablation, transfer, and training runs still need to be executed; see [Additional experiments](EXPERIMENTS.md) for exact PowerShell commands and current results.
 
 ## Reproduction results
 
@@ -52,6 +52,31 @@ Both FAISS CPU runs are complete. The full WordNet noun selection yielded 776 no
 | Seven prompts, [`runs`](reproduction/results/faiss_seven/runs.csv) / [`summary`](reproduction/results/faiss_seven/summary.json) | 83.67 ± 6.42 | 78.86 ± 2.10 | 74.52 ± 4.99 |
 
 The seven-prompt ensemble slightly raised mean NMI and ARI but did not raise mean ACC. The large seed-to-seed variation prevents a reliable improvement claim. These are FAISS CPU results; the authors used FAISS GPU. Both runs use the same clustering backend and seeds, and each prompt set selects its own nouns from the full WordNet vocabulary. A [20-seed stability diagnostic](EXPERIMENTS.md#1-faiss-stability-and-sampling-diagnostic) shows that FAISS's local default sample cap is a material source of variation.
+
+## Additional experiments: current status
+
+The five follow-up experiments use the same cached CIFAR-10 CLIP features and WordNet embeddings where applicable. **Completed** means numerical results are committed; **ready to run** means the implementation is committed but the long job has not been executed. Detailed protocols, commands, and resume instructions are in [EXPERIMENTS.md](EXPERIMENTS.md).
+
+| Experiment | Status | Current result or output |
+|---|---|---|
+| 1. FAISS seed and sampling stability | Completed | [20-seed default-cap runs](reproduction/results/stability_default.csv): single-prompt ACC 85.00 ± 5.59; seven-prompt ACC 85.98 ± 5.78. [Five-seed full-data diagnostic](reproduction/results/stability_full_data.csv): 89.11 ± 0.01 and 88.84 ± 3.04, respectively. |
+| 2. Separate noun selection from prompt encoding | Completed for FAISS CPU | [Four-cell experiment](reproduction/results/factorial_faiss.csv): single-prompt noun selection with seven-prompt retrieval encoding gives ACC 87.88 ± 5.26 over five seeds. The scikit-learn selection extension is available but has not been run. |
+| 3. Component and hyperparameter ablations | Ready to run | [`run_ablation_grid.py`](reproduction/run_ablation_grid.py) varies semantic-center count, nouns per center, retrieval temperature, and hard/soft retrieval. An image-only control and optional full-WordNet retrieval control are also available. |
+| 4. CIFAR-20 and STL-10 transfer | Ready to run | [`transfer_dataset.py`](reproduction/transfer_dataset.py) tests the CIFAR-10 exploratory text weight 0.75 against 1.0 without target-dataset tuning. |
+| 5. Full TAC distillation | Ready to run | [`train_tac.py`](reproduction/train_tac.py) implements two cluster heads, cross-modal neighbor distillation, and resumable epoch checkpoints. No trained-model score is claimed yet. |
+
+The first two analyses are exploratory. The full-data FAISS setting changes a clustering default, and the prompt factorial was compared on CIFAR-10 test labels. Neither establishes an independently validated improvement. The original authors used FAISS GPU; these scripts use FAISS CPU.
+
+Run the remaining long jobs in your own PowerShell terminal from `reproduction/`. On this machine, first set the existing local CLIP and FAISS package paths as shown in [Environment and cache](EXPERIMENTS.md#environment-and-cache); in a fresh environment, install `requirements-faiss.txt`.
+
+```powershell
+python run_ablation_grid.py --threads 8 --seeds 0 1 2 3 4 --restarts 20
+python transfer_dataset.py cifar20 --prompt-set seven --backend faiss-cpu --threads 8
+python transfer_dataset.py stl10 --prompt-set seven --backend faiss-cpu --threads 8
+python train_tac.py --prompt-set seven --device cpu --threads 8 --epochs 20 --seeds 0 1 2 3 4
+```
+
+These commands are independent; start them one at a time. Each script reuses its completed caches or checkpoints when restarted with the same settings. See the [runbook](EXPERIMENTS.md) for output paths, optional controls, and detailed resume behavior.
 
 ## Exploratory improvement: text fusion weight
 
