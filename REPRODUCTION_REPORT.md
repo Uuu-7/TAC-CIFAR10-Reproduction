@@ -95,6 +95,10 @@ Later experiments record Python 3.13.14, PyTorch 2.14.0+cpu, and FAISS 1.16.0 on
 
 ### 3.1. Initial training-free reproduction
 
+![Initial paper and CPU approximation comparison](reproduction/results/paper_vs_reproduction.png)
+
+**Figure 1.** Initial Euclidean-proxy reproduction against the paper: absolute metrics (left) and gain from adding retrieved text (right). This describes the initial five-seed approximation, not the trained model.
+
 **Table 1. Published reference scores and the initial CPU Euclidean approximation.** Reproduced values are five-seed means; published values are the source table entries and have no uncertainty estimate here.
 
 | Method | ACC | NMI | ARI |
@@ -107,6 +111,10 @@ Later experiments record Python 3.13.14, PyTorch 2.14.0+cpu, and FAISS 1.16.0 on
 The approximation falls 0.92 ACC points below the reported training-free TAC result. Its retrieved-text representation improves ACC by 14.03 points over its own image baseline. However, proximity to the paper does not establish exact reproduction because the clustering geometry differs.
 
 ### 3.2. FAISS sampling and stability
+
+![FAISS sampling stability](reproduction/results/figures/sampling_stability.png)
+
+**Figure 2.** Individual evaluation seeds (dots) and means ± sample SD (diamonds and intervals). Default-cap conditions use 20 seeds; full-data-cap conditions use five.
 
 **Table 2. Spherical K-means results under two evaluation sampling caps.** Different seed counts are stated explicitly.
 
@@ -121,6 +129,10 @@ Under the default cap, 7 of 20 seeds in each prompt condition have ACC below 85%
 
 ### 3.3. Prompt selection–encoding factorial
 
+![Prompt selection and encoding factorial](reproduction/results/figures/prompt_factorial.png)
+
+**Figure 3.** Four prompt combinations under FAISS CPU default sampling. Cells show mean ± sample SD over five seeds. Color scales vary across metrics; comparisons should be made within each panel.
+
 **Table 3. FAISS CPU prompt factorial, default cap, five seeds, 20 restarts.**
 
 | Noun-selection prompt | Retrieval-encoding prompt | ACC | NMI | ARI |
@@ -133,6 +145,10 @@ Under the default cap, 7 of 20 seeds in each prompt condition have ACC below 85%
 Single-prompt selection retains 776 nouns; seven-prompt selection retains 749. The largest mean ACC occurs with single-prompt selection and seven-prompt retrieval encoding. Large variation and test-set exploration preclude a confirmed superiority claim. The diagonal cells are the same five-seed conditions as the original FAISS baselines, rather than additional independent replications.
 
 ### 3.4. Component and parameter ablations
+
+![Image-only control and parameter ablations](reproduction/results/figures/component_ablations.png)
+
+**Figure 4.** Matched image-only control and 12 training-free configurations. Points and intervals show mean ± sample SD over five seeds. Dashed lines mark the baseline; gamma 20 is green. These are exploratory test-set comparisons.
 
 **Table 4. CIFAR-10 training-free ablations, seven prompts, full-data evaluation cap, five seeds.** Each row changes one factor from the baseline (167 centers, gamma 5, tau 0.005, soft retrieval). Image-only is a separate matched control.
 
@@ -156,6 +172,14 @@ Retrieved text raises baseline mean ACC by 13.71 points relative to image-only c
 
 ### 3.5. Transfer of text weighting and vocabulary size
 
+![Exploratory text weight sweep](reproduction/results/figures/fusion_weight.png)
+
+**Figure 5.** CIFAR-10 text-weight exploration using the Euclidean proxy. Points and intervals show mean ± sample SD over five seeds; dashed lines mark equal-weight fusion. This sweep motivated fixed-weight transfer evaluation.
+
+![Transfer validation of vocabulary size and text weight](reproduction/results/figures/transfer_validation.png)
+
+**Figure 6.** Vocabulary-size comparison on CIFAR-20 and STL-10 at both text weights. Points and intervals show mean ± sample SD over five seeds. Panel scales differ; no significance test is implied.
+
 An earlier CIFAR-10 fusion-weight experiment found ACC/NMI/ARI of 89.29/80.10/78.17 at text weight 0.75, versus 89.18/79.67/78.05 at weight 1.0. That experiment used the Euclidean approximation. Weight 0.75 was subsequently held fixed for target-dataset comparison under the transfer FAISS protocol; this changes the backend context of the original observation.
 
 **Table 5. Training-free transfer results, five seeds per condition.** Gamma 5 and 20 are compared within each weight. All entries are mean ± sample standard deviation.
@@ -176,6 +200,10 @@ At gamma 5, reducing text weight increases all three mean metrics on STL-10 but 
 Increasing gamma from 5 to 20 increases all three means on both datasets at both weights. At weight 1.0, CIFAR-20 ACC rises by 2.29 points and STL-10 ACC by 0.85 points. The retained vocabulary grows from 815 to 3,129 nouns on CIFAR-20 and from 85 to 340 on STL-10. These results support the tested larger-vocabulary choice in these settings. They do not establish that 20 is globally optimal, that improvements are statistically significant, or that more nouns always help.
 
 ### 3.6. Full TAC training and seed variability
+
+![Twenty-seed full TAC training and paper comparison](reproduction/results/figures/training_stability.png)
+
+**Figure 7.** Full TAC under 20 training seeds with fixed feature/text caches. Every seed is retained (left). The right panel compares reproduction mean ± sample SD with the paper's point references, for which no uncertainty is supplied here.
 
 **Table 6. Trained TAC on CIFAR-10.** The five-seed result is a subset of the 20-seed extension, not an independent cohort.
 
