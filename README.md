@@ -1,5 +1,7 @@
 # TAC Reproduction: CIFAR-10
 
+Read the [journal-style reproduction report](REPRODUCTION_REPORT.md) for the methods, complete results, discussion, and limitations.
+
 This repository reproduces CIFAR-10 **TAC (no train)** and full TAC distillation from [Li et al., *Image Clustering with External Guidance*, ICML 2024](https://proceedings.mlr.press/v235/li24aa.html). Completed experiments also include stability analysis, prompt and component ablations, and CIFAR-20/STL-10 transfer. See [Additional experiments](EXPERIMENTS.md) for protocols, commands, and results.
 
 ## Reproduction results
