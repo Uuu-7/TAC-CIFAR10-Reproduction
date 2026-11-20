@@ -52,7 +52,7 @@ python cached_experiments.py factorial --selection-backends sklearn faiss-cpu --
 
 ## 3. Component and parameter ablations
 
-All 12 default configurations are complete (five seeds each); see [summary.csv](reproduction/results/ablation_grid/summary.csv). Baseline ACC/NMI/ARI are 88.84/80.31/78.40. Gamma 20 gives 90.21/80.82/79.86, while temperature 0.01 gives 89.81/81.32/79.02. These test-set comparisons are exploratory; they do not establish a validated parameter improvement. Separate image-only and all-noun controls have not been run.
+All 12 default configurations are complete (five seeds each); see [summary.csv](reproduction/results/ablation_grid/summary.csv). Baseline ACC/NMI/ARI are 88.84/80.31/78.40. Gamma 20 gives 90.21/80.82/79.86, while temperature 0.01 gives 89.81/81.32/79.02. These test-set comparisons are exploratory. The completed [image-only control](reproduction/results/ablation_image_only.csv) gives ACC 75.13 ± 0.03, NMI 71.19 ± 0.02, ARI 62.53 ± 0.02 using identical seeds, restarts and evaluation sample cap. Equal-weight image/text fusion at baseline improves mean ACC by 13.71 percentage points. The all-noun control has not been run.
 
 The prespecified grid varies one factor from the seven-prompt baseline: semantic centers (50/100/300), nouns per center (1/3/10/20), retrieval temperature (0.002/0.01/0.02), and hard vs soft retrieval. It uses FAISS CPU, five seeds, 20 restarts, and the full test-set training cap of 1,000. Each configuration writes its own CSV, config JSON, and log. Restarting skips completed configurations.
 
@@ -107,5 +107,24 @@ All five seeds completed 20 epochs. Results are in [runs.csv](reproduction/resul
 Checkpoints and neighbors stay in ignored `data/cache/`. Keep the same output directory, prompt, batch size, neighbor count, temperature, balance weight, and epoch target when resuming. If you change the noun cache or CLIP features, clear the corresponding retrieved-text, neighbor, and checkpoint caches first.
 
 ## Reading results
+
+### Follow-up: transfer the gamma=20 choice
+
+After the 20-seed training extension and image-only control, test the fixed CIFAR-10 choice of 20 nouns per center against the completed gamma=5 transfer runs. Keep prompts, seeds, FAISS settings, and both text weights unchanged. Compare gamma values within each weight; do not choose a new weight using target scores. Reuse cached image/WordNet features and write separate output folders:
+
+```powershell
+python transfer_dataset.py cifar20 --prompt-set seven --backend faiss-cpu --threads 8 --gamma 20 --seeds 0 1 2 3 4 --weights 1.0 0.75 --output-dir results/cifar20_transfer_gamma20
+python transfer_dataset.py stl10 --prompt-set seven --backend faiss-cpu --threads 8 --gamma 20 --seeds 0 1 2 3 4 --weights 1.0 0.75 --output-dir results/stl10_transfer_gamma20
+```
+
+The gamma=20 follow-up is complete. See the CIFAR-20 [runs](reproduction/results/cifar20_transfer_gamma20/runs.csv) / [summary](reproduction/results/cifar20_transfer_gamma20/summary.json) and STL-10 [runs](reproduction/results/stl10_transfer_gamma20/runs.csv) / [summary](reproduction/results/stl10_transfer_gamma20/summary.json). For weights 1.0/0.75, CIFAR-20 ACC is 56.68 ± 2.94 / 56.63 ± 2.27; STL-10 ACC is 98.28 ± 0.02 / 98.28 ± 0.02. All three mean metrics increase relative to gamma=5 within each weight. Five paired seeds per dataset provide evidence of transfer for this fixed choice, but no significance test or universal improvement claim is made. The selected vocabulary grows from 815 to 3,129 nouns on CIFAR-20 and from 85 to 340 on STL-10.
+
+### Follow-up: full TAC with 20 seeds
+
+The completed [20-seed extension](reproduction/results/tac_training_20seeds/summary.json) uses seeds 0–19, preserving the original seeds 0–4 via completed checkpoints. ACC/NMI/ARI are 90.81 ± 2.76 / 82.61 ± 1.49 / 81.84 ± 2.96. Seeds 1 and 10 have ACC 83.28 and 82.23; the other 18 range from 91.30 to 91.89. All seeds remain in the summary. This measures training randomness conditional on one fixed CLIP feature and selected-text cache, rather than randomness of the entire feature/noun-selection pipeline.
+
+```powershell
+python train_tac.py --prompt-set seven --device cpu --threads 8 --epochs 20 --seeds 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 --output-dir results/tac_training_20seeds
+```
 
 Scores are percentages. Means and standard deviations summarize the requested random seeds; a low-variance result on five seeds does not prove stability across environments. All ablations evaluate on the test set for analysis, while feature construction and noun selection use train images without labels. The paper's TAC (no train) CIFAR-10 row is ACC 90.1, NMI 80.8, ARI 79.8; the trained TAC row is ACC 91.9, NMI 83.3, ARI 83.1. See the [paper](https://proceedings.mlr.press/v235/li24aa.html) and [released code](https://github.com/XLearning-SCU/2024-ICML-TAC) for the original protocol.

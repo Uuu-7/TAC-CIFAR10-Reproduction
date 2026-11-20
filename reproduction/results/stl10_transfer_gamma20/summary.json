@@ -1,0 +1,56 @@
+{
+  "dataset": "stl10",
+  "prompt_set": "seven",
+  "backend": "faiss-cpu",
+  "device": "cpu",
+  "python": "3.13.14",
+  "clusters": 10,
+  "semantic_centers": 17,
+  "gamma": 20,
+  "center_seed": 0,
+  "center_restarts": 10,
+  "selected_nouns": 340,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "restarts": 20,
+  "weights": [
+    1.0,
+    0.75
+  ],
+  "elapsed_seconds": 4.422975299999962,
+  "summary": {
+    "1.0": {
+      "ACC": {
+        "mean": 98.2775,
+        "std": 0.018540496217737144
+      },
+      "NMI": {
+        "mean": 95.65475424036259,
+        "std": 0.03801710092751784
+      },
+      "ARI": {
+        "mean": 96.22531844074418,
+        "std": 0.040242817501374095
+      }
+    },
+    "0.75": {
+      "ACC": {
+        "mean": 98.2825,
+        "std": 0.02270737765572892
+      },
+      "NMI": {
+        "mean": 95.72501512925689,
+        "std": 0.04921079493267788
+      },
+      "ARI": {
+        "mean": 96.23816256943005,
+        "std": 0.049189117532136416
+      }
+    }
+  }
+}

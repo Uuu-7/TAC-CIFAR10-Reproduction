@@ -61,9 +61,18 @@ The five follow-up experiments use the same cached CIFAR-10 CLIP features and Wo
 |---|---|---|
 | 1. FAISS seed and sampling stability | Completed | [20-seed default-cap runs](reproduction/results/stability_default.csv): single-prompt ACC 85.00 ± 5.59; seven-prompt ACC 85.98 ± 5.78. [Five-seed full-data diagnostic](reproduction/results/stability_full_data.csv): 89.11 ± 0.01 and 88.84 ± 3.04, respectively. |
 | 2. Separate noun selection from prompt encoding | Completed for FAISS CPU | [Four-cell experiment](reproduction/results/factorial_faiss.csv): single-prompt noun selection with seven-prompt retrieval encoding gives ACC 87.88 ± 5.26 over five seeds. The scikit-learn selection extension is available but has not been run. |
-| 3. Component and hyperparameter ablations | Completed: 12 configurations | [Summary](reproduction/results/ablation_grid/summary.csv): five seeds per configuration. Gamma 20 gives ACC 90.21; baseline 88.84. Separate image-only and full-WordNet controls remain optional and unrun. |
+| 3. Component and hyperparameter ablations | Completed: 12 configurations plus image-only control | [Summary](reproduction/results/ablation_grid/summary.csv): five seeds per configuration. Gamma 20 gives ACC 90.21; baseline 88.84. [Image-only](reproduction/results/ablation_image_only.csv) gives ACC 75.13 ± 0.03 with matching FAISS evaluation settings. Full-WordNet retrieval remains unrun. |
 | 4. CIFAR-20 and STL-10 transfer | Completed | Text weight 1.0 → 0.75 changes mean ACC from 54.39 → 55.04 on [CIFAR-20](reproduction/results/cifar20_transfer/summary.json), and 97.43 → 98.00 on [STL-10](reproduction/results/stl10_transfer/summary.json). CIFAR-20 NMI decreases. |
-| 5. Full TAC distillation | Completed: five seeds, 20 epochs each | [Summary](reproduction/results/tac_training/summary.json): ACC 90.05 ± 3.79, NMI 82.24 ± 2.02, ARI 81.06 ± 4.06. Seed 1 ACC is 83.28; all seeds are retained. |
+| 5. Full TAC distillation | Completed: 20 seeds, 20 epochs each | [20-seed summary](reproduction/results/tac_training_20seeds/summary.json): ACC 90.81 ± 2.76, NMI 82.61 ± 1.49, ARI 81.84 ± 2.96. Seeds 1 and 10 have ACC 83.28 and 82.23; all seeds are retained. The original [five-seed result](reproduction/results/tac_training/summary.json) is preserved. |
+
+The fixed gamma=20 follow-up also completed on both transfer datasets. Compared within each text weight, gamma=20 increases all three mean metrics relative to gamma=5. These are five-seed observations on two datasets, not a claim of universal or statistically significant improvement:
+
+| Dataset | Text weight | ACC, gamma 5 → 20 | NMI, gamma 5 → 20 | ARI, gamma 5 → 20 |
+|---|---:|---:|---:|---:|
+| [CIFAR-20](reproduction/results/cifar20_transfer_gamma20/summary.json) | 1.0 | 54.39 → 56.68 | 59.58 → 60.40 | 40.74 → 42.74 |
+| CIFAR-20 | 0.75 | 55.04 → 56.63 | 59.07 → 59.18 | 40.74 → 42.23 |
+| [STL-10](reproduction/results/stl10_transfer_gamma20/summary.json) | 1.0 | 97.43 → 98.28 | 94.12 → 95.65 | 94.41 → 96.23 |
+| STL-10 | 0.75 | 98.00 → 98.28 | 95.08 → 95.73 | 95.63 → 96.24 |
 
 The first two analyses are exploratory. The full-data FAISS setting changes a clustering default, and the prompt factorial was compared on CIFAR-10 test labels. Neither establishes an independently validated improvement. The original authors used FAISS GPU; these scripts use FAISS CPU.
 
@@ -97,4 +106,4 @@ On this CIFAR-10 test set, weight 0.75 increased the three means by about 0.11, 
 
 ## Code provenance and limitations
 
-The reproduction follows the [authors' public implementation](https://github.com/XLearning-SCU/2024-ICML-TAC). Local copies of the authors' original modules were not uploaded to this repository. The published scripts are standalone. The original training code requires CUDA and FAISS GPU; this repository's completed training adaptation uses FAISS CPU neighbors and PyTorch CPU. Its five-seed result remains below the paper's TAC ACC of 91.9 and exhibits one poor seed. Datasets, model weights, and paper PDFs are not distributed here.
+The reproduction follows the [authors' public implementation](https://github.com/XLearning-SCU/2024-ICML-TAC). Local copies of the authors' original modules were not uploaded to this repository. The published scripts are standalone. The original training code requires CUDA and FAISS GPU; this repository's completed training adaptation uses FAISS CPU neighbors and PyTorch CPU. Its 20-seed mean remains below the paper's TAC ACC of 91.9 and includes two poor seeds. Datasets, model weights, and paper PDFs are not distributed here.

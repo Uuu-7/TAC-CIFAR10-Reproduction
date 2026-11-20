@@ -116,9 +116,13 @@ def main() -> None:
     parser.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4])
     parser.add_argument("--restarts", type=int, default=20)
     parser.add_argument("--weights", type=float, nargs="+", default=[1.0, 0.75])
+    parser.add_argument("--gamma", type=int, default=5,
+                        help="Maximum nouns per semantic center; fixed before target evaluation.")
     args = parser.parse_args()
     if any(weight < 0 for weight in args.weights):
         raise ValueError("Weights must be nonnegative")
+    if args.gamma < 1:
+        parser.error("--gamma must be positive")
     torch.set_num_threads(args.threads)
     if args.backend == "faiss-cpu":
         import faiss
@@ -130,7 +134,8 @@ def main() -> None:
         raise RuntimeError("CUDA requested but unavailable")
     cache = args.data_dir / "cache"
     cache.mkdir(parents=True, exist_ok=True)
-    output = args.output_dir or root / "results" / f"{args.dataset}_transfer"
+    suffix = "" if args.gamma == 5 else f"_gamma{args.gamma}"
+    output = args.output_dir or root / "results" / f"{args.dataset}_transfer{suffix}"
     output.mkdir(parents=True, exist_ok=True)
     model, preprocess = clip.load("ViT-B/32", device=device, jit=False,
                                   download_root=args.data_dir / "models")
@@ -144,7 +149,7 @@ def main() -> None:
     semantic_centers = 167 if args.dataset == "cifar20" else 17
     noun_features = np.load(cache / PROMPT_FILES[args.prompt_set], mmap_mode="r")
     indices = selected_noun_indices(l2_normalize(train_image), noun_features,
-                                    semantic_centers, 5, args.backend, args.seeds[0], 10)
+                                    semantic_centers, args.gamma, args.backend, args.seeds[0], 10)
     selected = l2_normalize(np.asarray(noun_features[indices], dtype=np.float32))
     image_unit = l2_normalize(test_image)
     retrieved = retrieve(image_unit, selected, tau=0.005, mode="soft")
@@ -153,7 +158,7 @@ def main() -> None:
         fused = np.concatenate((image_unit, weight * retrieved), axis=1)
         for seed in args.seeds:
             pred, _ = cluster_kmeans(fused, clusters, seed, args.restarts, args.backend)
-            row = {"dataset": args.dataset, "weight": weight, "seed": seed,
+            row = {"dataset": args.dataset, "gamma": args.gamma, "weight": weight, "seed": seed,
                    **metrics(test_labels, pred, clusters)}
             rows.append(row)
             print(row, flush=True)
@@ -165,6 +170,7 @@ def main() -> None:
         "dataset": args.dataset, "prompt_set": args.prompt_set, "backend": args.backend,
         "device": str(device), "python": platform.python_version(),
         "clusters": clusters, "semantic_centers": semantic_centers,
+        "gamma": args.gamma, "center_seed": args.seeds[0], "center_restarts": 10,
         "selected_nouns": len(selected), "seeds": args.seeds, "restarts": args.restarts,
         "weights": args.weights, "elapsed_seconds": time.perf_counter() - started,
         "summary": {
