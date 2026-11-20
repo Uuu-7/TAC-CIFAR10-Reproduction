@@ -1,5 +1,6 @@
 # Reproducing Text-Guided Image Clustering: A CPU Study of TAC with Stability Analysis and Cross-Dataset Validation
 
+**Student:** Xia Yuqi  
 **Article type:** Reproduction and experimental validation report  
 **Report date:** 20 November 2026  
 **Code and experimental records:** [TAC-CIFAR10-Reproduction](https://github.com/Uuu-7/TAC-CIFAR10-Reproduction)  
